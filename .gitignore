@@ -1,0 +1,18 @@
+# Secrets - never commit these
+.env
+*.env
+!.env.example
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local test scripts / scratch files (not part of the submission)
+backend/run_pipeline_local.py
+backend/data/*.tmp
+backend/data/manufacturers_v2.csv
