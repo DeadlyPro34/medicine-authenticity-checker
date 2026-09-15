@@ -456,14 +456,16 @@
     margin-bottom: 2px;
   }
 
-  .check-status {
-    font-size: 13px;
+  .check-value {
+    font-size: 12px;
     font-weight: 600;
+    word-break: break-word;
+    line-height: 1.35;
   }
 
-  .check-status.pass { color: var(--safe); }
-  .check-status.warn { color: var(--caution-dark); }
-  .check-status.fail { color: var(--risk); }
+  .check-value.pass { color: var(--safe); }
+  .check-value.warn { color: var(--caution-dark); }
+  .check-value.fail { color: var(--risk); }
 
   /* About medicine card */
   .about-card .card-body { padding: 18px 20px; }
@@ -767,46 +769,63 @@
     packaging: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>'
   };
 
-  function getCheckStatus(data, key) {
-    // Try to infer from details or flags
+  function getCheckInfo(data, key) {
     const details = data.details || {};
-    const compliance = details.compliance_check || {};
-    const flags = data.flags || [];
-    const flagsLower = flags.map(f => f.toLowerCase());
+    const compliance = details.compliance || {};
 
     if (key === 'expiry') {
-      if (compliance.expiry_status === 'valid' || compliance.expiry_status === 'not_expired') return 'Pass';
-      if (compliance.expiry_status === 'expired') return 'Fail';
-      if (flagsLower.some(f => f.includes('expir'))) return 'Warn';
-      return 'Pass';
+      const expiry = compliance.expiry || {};
+      const status = expiry.status || 'unknown';
+      const detail = expiry.detail || '';
+      // Extract the date from detail like "Valid until 2027-05." or "Expired on 2024-01."
+      const dateMatch = detail.match(/(\d{4}-\d{2})/);
+      const dateStr = dateMatch ? dateMatch[1] : null;
+      let displayValue = dateStr || 'Not legible';
+      let cls = 'pass';
+      if (status === 'fail') { cls = 'fail'; displayValue = dateStr ? dateStr + ' (Expired)' : 'Expired'; }
+      else if (status === 'warn') { cls = 'warn'; displayValue = dateStr ? dateStr + ' (Unclear)' : 'Unclear'; }
+      else if (status === 'unknown') { cls = 'warn'; displayValue = 'Not legible'; }
+      return { cls, value: displayValue };
     }
+
     if (key === 'manufacturer') {
-      if (compliance.manufacturer_verified === true) return 'Pass';
-      if (compliance.manufacturer_verified === false) return 'Warn';
-      if (flagsLower.some(f => f.includes('manufacturer') || f.includes('unverified'))) return 'Warn';
-      return 'Pass';
+      const mfr = compliance.manufacturer || {};
+      const status = mfr.status || 'unknown';
+      const match = mfr.match || null;
+      let displayValue = match || data.manufacturer || 'Not legible';
+      let cls = 'pass';
+      if (status === 'pass') { cls = 'pass'; displayValue = match || data.manufacturer || 'Verified'; }
+      else if (status === 'warn') { cls = 'warn'; displayValue = (data.manufacturer || 'Unknown') + ' (Unverified)'; }
+      else if (status === 'unknown') { cls = 'warn'; displayValue = 'Not legible'; }
+      return { cls, value: displayValue };
     }
+
     if (key === 'batch') {
-      if (compliance.batch_format_valid === true) return 'Pass';
-      if (compliance.batch_format_valid === false) return 'Warn';
-      if (flagsLower.some(f => f.includes('batch'))) return 'Warn';
-      return 'Pass';
+      const batch = compliance.batch_format || {};
+      const status = batch.status || 'unknown';
+      const detail = batch.detail || '';
+      let cls = 'pass';
+      let displayValue = 'Valid';
+      if (status === 'pass') { cls = 'pass'; displayValue = 'Valid format'; }
+      else if (status === 'warn') { cls = 'warn'; displayValue = 'Mismatch'; }
+      else if (status === 'unknown') { cls = 'warn'; displayValue = 'Not verified'; }
+      else if (status === 'fail') { cls = 'fail'; displayValue = 'Invalid'; }
+      return { cls, value: displayValue };
     }
+
     if (key === 'packaging') {
       const visual = details.visual_forensics || {};
-      if (visual.risk_level === 'Safe' || visual.risk_level === 'Low') return 'Pass';
-      if (visual.risk_level === 'Caution' || visual.risk_level === 'Medium') return 'Warn';
-      if (visual.risk_level === 'High Risk' || visual.risk_level === 'High') return 'Fail';
-      if (flagsLower.some(f => f.includes('packaging') || f.includes('print') || f.includes('visual'))) return 'Warn';
-      return 'Pass';
+      const anomalies = visual.anomalies_found || [];
+      const score = visual.visual_risk_score || 0;
+      let cls = 'pass';
+      let displayValue = 'Looks good';
+      if (score >= 60 || anomalies.length >= 3) { cls = 'fail'; displayValue = 'Suspicious'; }
+      else if (score >= 25 || anomalies.length >= 1) { cls = 'warn'; displayValue = anomalies.length + ' issue' + (anomalies.length > 1 ? 's' : ''); }
+      else { cls = 'pass'; displayValue = 'Looks good'; }
+      return { cls, value: displayValue };
     }
-    return 'Pass';
-  }
 
-  function statusCls(s) {
-    if (s === 'Pass') return 'pass';
-    if (s === 'Warn') return 'warn';
-    return 'fail';
+    return { cls: 'pass', value: 'OK' };
   }
 
   function renderResult(data) {
@@ -817,10 +836,10 @@
     const verdict = data.verdict || { headline: '', detail: '', icon: cls };
     const verdictCls = riskClass(data.risk_level);
 
-    const expiryStatus = getCheckStatus(data, 'expiry');
-    const mfrStatus = getCheckStatus(data, 'manufacturer');
-    const batchStatus = getCheckStatus(data, 'batch');
-    const packagingStatus = getCheckStatus(data, 'packaging');
+    const expiryInfo = getCheckInfo(data, 'expiry');
+    const mfrInfo = getCheckInfo(data, 'manufacturer');
+    const batchInfo = getCheckInfo(data, 'batch');
+    const packagingInfo = getCheckInfo(data, 'packaging');
 
     const aboutHtml = data.about
       ? `<div class="card about-card">
@@ -855,10 +874,10 @@
           </div>
         </div>
         <div class="checks-grid">
-          <div class="check-item">${CHECK_ICONS.expiry}<div class="check-label">Expiry</div><div class="check-status ${statusCls(expiryStatus)}">${expiryStatus}</div></div>
-          <div class="check-item">${CHECK_ICONS.manufacturer}<div class="check-label">Manufacturer</div><div class="check-status ${statusCls(mfrStatus)}">${mfrStatus}</div></div>
-          <div class="check-item">${CHECK_ICONS.batch}<div class="check-label">Batch format</div><div class="check-status ${statusCls(batchStatus)}">${batchStatus}</div></div>
-          <div class="check-item">${CHECK_ICONS.packaging}<div class="check-label">Packaging</div><div class="check-status ${statusCls(packagingStatus)}">${packagingStatus}</div></div>
+          <div class="check-item">${CHECK_ICONS.expiry}<div class="check-label">Expiry</div><div class="check-value ${expiryInfo.cls}">${escapeHtml(expiryInfo.value)}</div></div>
+          <div class="check-item">${CHECK_ICONS.manufacturer}<div class="check-label">Manufacturer</div><div class="check-value ${mfrInfo.cls}">${escapeHtml(mfrInfo.value)}</div></div>
+          <div class="check-item">${CHECK_ICONS.batch}<div class="check-label">Batch format</div><div class="check-value ${batchInfo.cls}">${escapeHtml(batchInfo.value)}</div></div>
+          <div class="check-item">${CHECK_ICONS.packaging}<div class="check-label">Packaging</div><div class="check-value ${packagingInfo.cls}">${escapeHtml(packagingInfo.value)}</div></div>
         </div>
         <div style="padding:16px 20px 18px;">
           <h3 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--ink-soft);">What we found</h3>
