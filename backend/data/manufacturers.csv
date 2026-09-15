@@ -1,0 +1,22 @@
+name,batch_pattern,notes,aliases
+Cipla,^[A-Z]{1,2}[0-9]{4,6}$,Major Indian pharma - Mumbai HQ,Cipla Ltd|Cipla Limited
+Sun Pharma,^[A-Z0-9]{6,10}$,Largest Indian pharma company,Sun Pharmaceutical Industries|Sun Pharmaceutical Industries Ltd|Ranbaxy Laboratories
+Dr. Reddy's Laboratories,^[A-Z]{2}[0-9]{5,7}$,Hyderabad HQ,Dr Reddys|Dr. Reddy's Labs|DRL
+Cadila Healthcare (Zydus),^[0-9]{2}[A-Z]{1}[0-9]{4,5}$,Ahmedabad HQ,Zydus Cadila|Zydus Lifesciences|Zydus Healthcare|Cadila Pharmaceuticals
+Lupin,^L[0-9]{5,7}$,Mumbai HQ,Lupin Ltd|Lupin Limited
+Aurobindo Pharma,^[A-Z]{1}[0-9]{6,8}$,Hyderabad HQ,Aurobindo Pharma Ltd|Aurobindo
+Biocon,^BC[0-9]{4,6}$,Bangalore HQ - biosimilars,Biocon Biologics|Biocon Ltd
+Torrent Pharmaceuticals,^T[0-9]{5,7}$,Ahmedabad HQ,Torrent Pharma|Torrent Pharma Ltd
+Alkem Laboratories,^[A-Z]{0,2}[0-9]{4,10}$,Mumbai HQ - batch numbers may be pure numeric or start with 1-2 letters.,Alkem Health Science|Alkem Labs|Alkem Ltd|Cachet Pharmaceuticals|Enzene Biosciences|Indchemie Health Specialities|Indchemie Health Specialities Pvt. Ltd
+Mankind Pharma,^MK[0-9]{4,6}$,Delhi HQ,Mankind|Mankind Pharma Ltd
+Glenmark Pharmaceuticals,^GL[0-9]{4,6}$,Mumbai HQ,Glenmark|Glenmark Pharma Ltd
+Intas Pharmaceuticals,^IN[0-9]{4,6}$,Ahmedabad HQ,Intas|Accord Healthcare
+Abbott India,^AB[0-9]{4,7}$,MNC subsidiary,Abbott Healthcare|Abbott Laboratories|Abbott
+GlaxoSmithKline Pharmaceuticals,^GSK[0-9]{3,6}$,MNC subsidiary,GSK|GlaxoSmithKline|GSK Pharma
+Pfizer Limited,^PF[0-9]{4,6}$,MNC subsidiary,Pfizer India|Pfizer Ltd|Pfizer
+Sanofi India,^SN[0-9]{4,6}$,MNC subsidiary,Sanofi|Sanofi India Ltd
+Novartis India,^NV[0-9]{4,6}$,MNC subsidiary,Novartis|Sandoz
+Ranbaxy Laboratories,^RX[0-9]{4,6}$,Merged into Sun Pharma in 2015 - flag if seen on new stock,Ranbaxy
+Wockhardt,^WK[0-9]{4,6}$,Mumbai HQ,Wockhardt Ltd|Wockhardt Limited
+Ipca Laboratories,^IP[0-9]{4,6}$,Mumbai HQ,Ipca Labs|Ipca Ltd
+Divya Pharmacy,^[A-Z0-9-]{4,12}$,Ayurvedic medicine manufacturer (Patanjali),Patanjali|Divya Pharmacy|Patanjali Ayurved
