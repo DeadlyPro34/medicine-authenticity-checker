@@ -4,45 +4,50 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Medicine Authenticity Checker</title>
+<meta name="description" content="Multi-agent AI system that inspects photos of medicine strips to flag counterfeit packaging and expired stock.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #14201E;
-    --ink-soft: #4A5754;
-    --paper: #EFEEE9;
-    --paper-raised: #F7F6F2;
+    --ink: #2D3436;
+    --ink-soft: #636E72;
+    --paper: #F0F0F0;
+    --paper-raised: #FFFFFF;
     --teal: #0F5257;
     --teal-deep: #0A3B3F;
-    --line: #D7D4CB;
-    --safe: #2A7A4B;
-    --safe-bg: #E7F2EB;
-    --caution: #B8720A;
-    --caution-bg: #FBF0DD;
-    --risk: #A6291F;
-    --risk-bg: #FBEAE8;
+    --teal-light: #E8F4F5;
+    --line: #DFE6E9;
+    --line-light: #ECEFF1;
+    --safe: #00B894;
+    --safe-dark: #00A381;
+    --safe-bg: #E6F9F3;
+    --caution: #FDCB6E;
+    --caution-dark: #E17E00;
+    --caution-bg: #FFF8E7;
+    --risk: #D63031;
+    --risk-bg: #FDEAEA;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+    --radius: 12px;
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    margin: 0;
     background: var(--paper);
     color: var(--ink);
     font-family: 'IBM Plex Sans', sans-serif;
-    line-height: 1.5;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
-  .wrap {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 0 20px 80px;
-  }
-
+  /* ─── HEADER (ss2 style) ─── */
   header {
     position: relative;
-    padding: 56px 20px 40px;
+    padding: 48px 24px 40px;
     text-align: center;
     overflow: hidden;
     background: var(--teal-deep);
@@ -59,70 +64,113 @@
     pointer-events: none;
   }
 
-  header .eyebrow-strip {
+  header .eyebrow {
     position: relative;
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
-    letter-spacing: 0.06em;
-    color: rgba(255,255,255,0.65);
-    margin-bottom: 14px;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 12px;
+    text-transform: uppercase;
   }
 
   header h1 {
     position: relative;
-    margin: 0;
-    font-size: clamp(28px, 5vw, 38px);
-    font-weight: 600;
+    font-size: clamp(26px, 4.5vw, 36px);
+    font-weight: 700;
     letter-spacing: -0.01em;
+    margin-bottom: 12px;
   }
 
   header p {
     position: relative;
-    max-width: 420px;
-    margin: 14px auto 0;
-    color: rgba(255,255,255,0.78);
+    max-width: 460px;
+    margin: 0 auto;
+    color: rgba(255,255,255,0.75);
     font-size: 15px;
   }
 
-  main {
-    margin-top: -28px;
+  /* ─── MAIN GRID ─── */
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 20px 32px;
+    flex: 1;
+    width: 100%;
   }
 
-  .panel {
+  .grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ─── CARDS ─── */
+  .card {
     background: var(--paper-raised);
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
   }
 
-  .upload-panel {
-    padding: 28px;
+  .card-header {
+    padding: 18px 20px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line-light);
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  /* ─── UPLOAD CARD (Left column) ─── */
+  .upload-card .card-header {
+    border-bottom: none;
+  }
+
+  .upload-card .card-subtitle {
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-weight: 400;
+    margin-top: 4px;
+    line-height: 1.45;
   }
 
   .drop-zone {
     border: 2px dashed var(--line);
-    border-radius: 4px;
-    padding: 36px 20px;
+    border-radius: 8px;
+    padding: 32px 16px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.2s, background-color 0.2s;
   }
 
   .drop-zone:hover,
   .drop-zone.drag-over {
     border-color: var(--teal);
-    background: rgba(15, 82, 87, 0.04);
+    background: var(--teal-light);
   }
 
-  .drop-zone svg { display: block; margin: 0 auto 12px; color: var(--ink-soft); }
-
-  .drop-zone .primary-text {
-    font-weight: 500;
-    font-size: 15px;
+  .drop-zone svg {
+    display: block;
+    margin: 0 auto 10px;
+    color: var(--ink-soft);
+    opacity: 0.6;
   }
 
-  .drop-zone .secondary-text {
+  .drop-zone .dz-primary {
     font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .drop-zone .dz-secondary {
+    font-size: 12px;
     color: var(--ink-soft);
     margin-top: 4px;
   }
@@ -132,20 +180,20 @@
   .preview-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-top: 18px;
+    gap: 12px;
   }
 
   .preview-thumb {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: 6px;
     border: 1px solid var(--line);
     flex-shrink: 0;
   }
 
   .preview-info { flex: 1; min-width: 0; }
+
   .preview-name {
     font-size: 13px;
     font-weight: 500;
@@ -153,98 +201,197 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .preview-change {
     background: none;
     border: none;
     color: var(--teal);
-    font-size: 13px;
+    font-size: 12px;
     padding: 0;
     cursor: pointer;
     text-decoration: underline;
     font-family: inherit;
+    margin-top: 2px;
   }
 
   .verify-btn {
     width: 100%;
-    margin-top: 18px;
-    padding: 13px;
+    margin-top: 16px;
+    padding: 12px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     background: var(--teal);
     color: white;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s, transform 0.1s;
   }
 
-  .verify-btn:hover:not(:disabled) { background: var(--teal-deep); }
+  .verify-btn:hover:not(:disabled) { background: var(--teal-deep); transform: translateY(-1px); }
+  .verify-btn:active:not(:disabled) { transform: translateY(0); }
   .verify-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
 
   .verify-btn.loading::after {
     content: "";
     display: inline-block;
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     margin-left: 8px;
-    border: 2px solid rgba(255,255,255,0.4);
+    border: 2px solid rgba(255,255,255,0.35);
     border-top-color: white;
     border-radius: 50%;
-    vertical-align: -2px;
+    vertical-align: -1px;
     animation: spin 0.7s linear infinite;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .error-box {
-    margin-top: 18px;
-    padding: 12px 14px;
+    margin-top: 14px;
+    padding: 10px 12px;
     background: var(--risk-bg);
-    border: 1px solid rgba(166,41,31,0.25);
-    border-radius: 4px;
+    border: 1px solid rgba(214,48,49,0.2);
+    border-radius: 6px;
     color: var(--risk);
-    font-size: 14px;
+    font-size: 13px;
   }
 
-  /* Results */
-  .result {
-    margin-top: 24px;
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    border-left-width: 5px;
-    border-radius: 4px;
+  /* ─── RECENT CHECKS ─── */
+  .recent-card { margin-top: 20px; }
+
+  .history-list {
+    list-style: none;
+  }
+
+  .history-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line-light);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .history-list li:first-child { border-top: none; }
+
+  .history-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .history-dot.safe { background: var(--safe); }
+  .history-dot.caution { background: var(--caution-dark); }
+  .history-dot.high-risk { background: var(--risk); }
+
+  .history-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
   }
 
-  .result.safe { border-left-color: var(--safe); }
-  .result.caution { border-left-color: var(--caution); }
-  .result.high-risk { border-left-color: var(--risk); }
+  .history-empty {
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: italic;
+    padding: 4px 0;
+  }
 
-  .result-head { padding: 20px 22px 20px; border-bottom: 1px solid var(--line); }
+  /* ─── RESULT AREA (Right column) ─── */
+  .result-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 
-  .result-head .title-row {
+  .result-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 40px;
+  }
+
+  .result-placeholder svg {
+    margin-bottom: 14px;
+    color: var(--line);
+  }
+
+  .result-placeholder .rp-title {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--ink-soft);
+  }
+
+  .result-placeholder .rp-sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    opacity: 0.7;
+  }
+
+  /* Result card */
+  .result-card {
+    border-left-width: 5px;
+  }
+
+  .result-card.safe { border-left-color: var(--safe); }
+  .result-card.caution { border-left-color: var(--caution-dark); }
+  .result-card.high-risk { border-left-color: var(--risk); }
+
+  .result-head {
+    padding: 20px;
+    border-bottom: 1px solid var(--line-light);
+  }
+
+  .title-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
   }
 
-  .result-head h2 {
-    margin: 0 0 4px;
-    font-size: 19px;
-    font-weight: 600;
+  .title-row h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 2px;
   }
 
-  .result-head .manufacturer {
+  .title-row .manufacturer {
     font-size: 13px;
     color: var(--ink-soft);
   }
 
+  .risk-badge {
+    flex-shrink: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    text-transform: capitalize;
+  }
+
+  .risk-badge.safe { background: var(--safe-bg); color: var(--safe-dark); }
+  .risk-badge.caution { background: var(--caution-bg); color: var(--caution-dark); }
+  .risk-badge.high-risk { background: var(--risk-bg); color: var(--risk); }
+
   .verdict-block {
-    margin-top: 16px;
-    padding: 14px 16px;
-    border-radius: 4px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
     display: flex;
     gap: 10px;
     align-items: flex-start;
@@ -256,228 +403,226 @@
 
   .verdict-icon {
     flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    margin-top: 1px;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
   }
 
   .verdict-icon.safe { color: var(--safe); }
-  .verdict-icon.caution { color: var(--caution); }
+  .verdict-icon.caution { color: var(--caution-dark); }
   .verdict-icon.high-risk { color: var(--risk); }
 
   .verdict-headline {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
-    margin: 0 0 3px;
   }
 
-  .verdict-headline.safe { color: var(--safe); }
-  .verdict-headline.caution { color: var(--caution); }
+  .verdict-headline.safe { color: var(--safe-dark); }
+  .verdict-headline.caution { color: var(--caution-dark); }
   .verdict-headline.high-risk { color: var(--risk); }
 
   .verdict-detail {
     font-size: 13px;
     color: var(--ink-soft);
-    margin: 0;
+    margin-top: 2px;
   }
 
-
-
-  .risk-badge {
-    flex-shrink: 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 5px 10px;
-    border-radius: 3px;
-    white-space: nowrap;
+  /* Checks grid */
+  .checks-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--line-light);
   }
 
-  .risk-badge.safe { background: var(--safe-bg); color: var(--safe); }
-  .risk-badge.caution { background: var(--caution-bg); color: var(--caution); }
-  .risk-badge.high-risk { background: var(--risk-bg); color: var(--risk); }
-
-  .score-row {
-    padding: 14px 22px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--line);
+  .check-item {
+    text-align: center;
+    padding: 16px 8px;
+    border-right: 1px solid var(--line-light);
   }
 
-  .score-label {
-    font-size: 12px;
+  .check-item:last-child { border-right: none; }
+
+  .check-item svg {
+    display: block;
+    margin: 0 auto 6px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .check-label {
+    font-size: 11px;
     color: var(--ink-soft);
-    text-transform: none;
-    white-space: nowrap;
+    margin-bottom: 2px;
   }
 
-  .score-track {
-    flex: 1;
-    height: 6px;
-    background: var(--line);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .score-fill {
-    height: 100%;
-    border-radius: 3px;
-  }
-
-  .score-fill.safe { background: var(--safe); }
-  .score-fill.caution { background: var(--caution); }
-  .score-fill.high-risk { background: var(--risk); }
-
-  .score-value {
-    font-family: 'IBM Plex Mono', monospace;
+  .check-status {
     font-size: 13px;
     font-weight: 600;
-    width: 34px;
-    text-align: right;
   }
 
-  .flags-section { padding: 16px 22px 20px; }
+  .check-status.pass { color: var(--safe); }
+  .check-status.warn { color: var(--caution-dark); }
+  .check-status.fail { color: var(--risk); }
 
-  .flags-section h3 {
-    margin: 0 0 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-soft);
-  }
-
-  .flags-list { margin: 0; padding: 0; list-style: none; }
-
-  .flags-list li {
-    font-size: 14px;
-    padding: 8px 0;
-    border-top: 1px solid var(--line);
-    display: flex;
-    gap: 8px;
-  }
-
-  .flags-list li:first-child { border-top: none; }
-
-  .flags-list li::before {
-    content: "—";
-    color: var(--ink-soft);
-    flex-shrink: 0;
-  }
-
-  .no-flags {
-    font-size: 14px;
-    color: var(--ink-soft);
-    font-style: italic;
-  }
-
-  .about-section {
-    padding: 4px 22px 20px;
-  }
-
-  .about-section h3 {
-    margin: 0 0 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-soft);
-  }
-
-  .about-box {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 12px 14px;
-  }
+  /* About medicine card */
+  .about-card .card-body { padding: 18px 20px; }
 
   .about-text {
     font-size: 14px;
-    margin: 0 0 8px;
+    color: var(--ink);
+    line-height: 1.55;
   }
 
   .about-disclaimer {
     font-size: 12px;
     color: var(--ink-soft);
-    margin: 0;
     font-style: italic;
+    margin-top: 8px;
   }
 
+  /* Raw JSON toggle */
   .raw-toggle {
     display: block;
     width: 100%;
-    text-align: left;
-    padding: 12px 22px;
-    background: none;
+    text-align: center;
+    padding: 10px 20px;
+    background: var(--paper);
     border: none;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--line-light);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     color: var(--ink-soft);
     cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 0 0 var(--radius) var(--radius);
   }
+
+  .raw-toggle:hover { background: var(--line-light); }
 
   .raw-json {
     display: none;
-    padding: 0 22px 18px;
+    padding: 14px 20px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     color: var(--ink-soft);
     white-space: pre-wrap;
     word-break: break-word;
+    background: var(--paper);
+    border-top: 1px solid var(--line-light);
   }
 
   .raw-json.open { display: block; }
 
-  .disclaimer {
-    margin-top: 28px;
-    font-size: 12px;
-    color: var(--ink-soft);
+  /* ─── FOOTER (ss3 style) ─── */
+  footer {
+    background: #E8E8E8;
+    border-top: 1px solid var(--line);
+    padding: 24px 20px;
     text-align: center;
+  }
+
+  .footer-text {
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 13px;
+    color: #6B7280;
     line-height: 1.6;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 720px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+
+    .checks-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .check-item:nth-child(2) { border-right: none; }
+    .check-item:nth-child(3),
+    .check-item:nth-child(4) { border-top: 1px solid var(--line-light); }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="eyebrow-strip">Multi-agent packaging inspection</div>
+  <div class="eyebrow">Multi-agent packaging inspection</div>
   <h1>Medicine Authenticity Checker</h1>
   <p>Upload a photo of a medicine strip or box to check expiry, manufacturer, batch format, and packaging for signs of counterfeiting.</p>
 </header>
 
 <div class="wrap">
-  <main>
-    <div class="panel upload-panel">
-      <div class="drop-zone" id="dropZone">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M12 16V4M12 4L7 9M12 4l5 5"/>
-          <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
-        </svg>
-        <div class="primary-text">Drop a photo here, or click to choose one</div>
-        <div class="secondary-text">JPG, PNG, or WEBP</div>
-      </div>
-      <input type="file" id="fileInput" accept="image/*">
+  <div class="grid">
 
-      <div class="preview-row" id="previewRow" style="display:none;">
-        <img class="preview-thumb" id="previewThumb" alt="Selected medicine photo">
-        <div class="preview-info">
-          <div class="preview-name" id="previewName"></div>
-          <button class="preview-change" id="changeBtn">Choose a different photo</button>
+    <!-- LEFT COLUMN -->
+    <div class="left-col">
+      <!-- Upload card -->
+      <div class="card upload-card">
+        <div class="card-header">
+          Upload a photo
+          <div class="card-subtitle">Medicine strip or box, expiry, manufacturer, batch format and packaging.</div>
+        </div>
+        <div class="card-body">
+          <div class="drop-zone" id="dropZone">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <div class="dz-primary">Drop image here, or click to browse</div>
+            <div class="dz-secondary">JPG, PNG, or WEBP</div>
+          </div>
+
+          <div class="preview-row" id="previewRow" style="display:none;">
+            <img class="preview-thumb" id="previewThumb" alt="Selected medicine photo">
+            <div class="preview-info">
+              <div class="preview-name" id="previewName"></div>
+              <button class="preview-change" id="changeBtn">Choose a different photo</button>
+            </div>
+          </div>
+
+          <input type="file" id="fileInput" accept="image/*">
+          <button class="verify-btn" id="verifyBtn" disabled>Check this medicine</button>
+          <div class="error-box" id="errorBox" style="display:none;"></div>
         </div>
       </div>
 
-      <button class="verify-btn" id="verifyBtn" disabled>Check this medicine</button>
-      <div class="error-box" id="errorBox" style="display:none;"></div>
+      <!-- Recent checks card -->
+      <div class="card recent-card">
+        <div class="card-header">Recent checks</div>
+        <div class="card-body">
+          <ul class="history-list" id="historyList">
+            <li class="history-empty" id="historyEmpty">No checks yet</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
-    <div id="resultContainer"></div>
+    <!-- RIGHT COLUMN -->
+    <div class="result-area" id="resultArea">
+      <div class="card" id="resultPlaceholderCard">
+        <div class="result-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M9 12l2 2 4-4"/>
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+          </svg>
+          <div class="rp-title">Upload a medicine photo to get started</div>
+          <div class="rp-sub">Results will appear here</div>
+        </div>
+      </div>
+    </div>
 
-    <p class="disclaimer">
-      Demo compliance database covers a limited set of manufacturers.
-      An "unverified manufacturer" result means it isn't in that list yet —
-      not that the medicine is confirmed fake. Not a substitute for pharmacist
-      or regulatory verification.
-    </p>
-  </main>
+  </div>
 </div>
+
+<footer>
+  <p class="footer-text">
+    Demo compliance database covers a limited set of manufacturers. An "unverified manufacturer" result means it isn't in that list yet &mdash; not that the medicine is confirmed fake. Not a substitute for pharmacist or regulatory verification.
+  </p>
+</footer>
 
 <script>
   const API_URL = "http://localhost:8000/verify";
@@ -490,16 +635,16 @@
   const changeBtn = document.getElementById('changeBtn');
   const verifyBtn = document.getElementById('verifyBtn');
   const errorBox = document.getElementById('errorBox');
-  const resultContainer = document.getElementById('resultContainer');
+  const resultArea = document.getElementById('resultArea');
+  const historyList = document.getElementById('historyList');
+  const historyEmpty = document.getElementById('historyEmpty');
 
   let selectedFile = null;
+  let checkHistory = [];
 
+  // Drag & Drop
   dropZone.addEventListener('click', () => fileInput.click());
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
@@ -518,7 +663,6 @@
     previewRow.style.display = 'none';
     dropZone.style.display = 'block';
     verifyBtn.disabled = true;
-    resultContainer.innerHTML = '';
   });
 
   function handleFile(file) {
@@ -528,8 +672,6 @@
     }
     selectedFile = file;
     hideError();
-    resultContainer.innerHTML = '';
-
     const reader = new FileReader();
     reader.onload = (e) => {
       previewThumb.src = e.target.result;
@@ -541,18 +683,13 @@
     reader.readAsDataURL(file);
   }
 
-  function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.style.display = 'block';
-  }
-  function hideError() {
-    errorBox.style.display = 'none';
-  }
+  function showError(msg) { errorBox.textContent = msg; errorBox.style.display = 'block'; }
+  function hideError() { errorBox.style.display = 'none'; }
 
+  // Verify
   verifyBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
     hideError();
-    resultContainer.innerHTML = '';
     verifyBtn.disabled = true;
     verifyBtn.classList.add('loading');
     verifyBtn.textContent = 'Checking';
@@ -563,11 +700,11 @@
     try {
       const res = await fetch(API_URL, { method: 'POST', body: formData });
       const data = await res.json();
-
       if (!res.ok) {
         showError(data.detail || 'Something went wrong while checking this image.');
       } else {
         renderResult(data);
+        addToHistory(data);
       }
     } catch (err) {
       showError('Could not reach the checker service. Is the backend running on localhost:8000?');
@@ -578,6 +715,33 @@
     }
   });
 
+  // History
+  function addToHistory(data) {
+    const name = data.drug_name || 'Unknown medicine';
+    const cls = riskClass(data.risk_level);
+    checkHistory.unshift({ name, cls, data });
+    if (checkHistory.length > 10) checkHistory.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (checkHistory.length === 0) {
+      historyList.innerHTML = '<li class="history-empty">No checks yet</li>';
+      return;
+    }
+    historyList.innerHTML = checkHistory.map((item, i) =>
+      `<li data-index="${i}"><span class="history-dot ${item.cls}"></span><span class="history-name">${escapeHtml(item.name)}</span></li>`
+    ).join('');
+
+    historyList.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => {
+        const idx = parseInt(li.dataset.index);
+        if (checkHistory[idx]) renderResult(checkHistory[idx].data);
+      });
+    });
+  }
+
+  // Render
   function riskClass(level) {
     if (level === 'Safe') return 'safe';
     if (level === 'Caution') return 'caution';
@@ -596,32 +760,84 @@
     risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>'
   };
 
+  const CHECK_ICONS = {
+    expiry: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+    manufacturer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M9 21V8l-4 4V21M9 8l6-5v18M15 21V8l6 5v8"/></svg>',
+    batch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M6 16h.01M10 16h.01"/></svg>',
+    packaging: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>'
+  };
+
+  function getCheckStatus(data, key) {
+    // Try to infer from details or flags
+    const details = data.details || {};
+    const compliance = details.compliance_check || {};
+    const flags = data.flags || [];
+    const flagsLower = flags.map(f => f.toLowerCase());
+
+    if (key === 'expiry') {
+      if (compliance.expiry_status === 'valid' || compliance.expiry_status === 'not_expired') return 'Pass';
+      if (compliance.expiry_status === 'expired') return 'Fail';
+      if (flagsLower.some(f => f.includes('expir'))) return 'Warn';
+      return 'Pass';
+    }
+    if (key === 'manufacturer') {
+      if (compliance.manufacturer_verified === true) return 'Pass';
+      if (compliance.manufacturer_verified === false) return 'Warn';
+      if (flagsLower.some(f => f.includes('manufacturer') || f.includes('unverified'))) return 'Warn';
+      return 'Pass';
+    }
+    if (key === 'batch') {
+      if (compliance.batch_format_valid === true) return 'Pass';
+      if (compliance.batch_format_valid === false) return 'Warn';
+      if (flagsLower.some(f => f.includes('batch'))) return 'Warn';
+      return 'Pass';
+    }
+    if (key === 'packaging') {
+      const visual = details.visual_forensics || {};
+      if (visual.risk_level === 'Safe' || visual.risk_level === 'Low') return 'Pass';
+      if (visual.risk_level === 'Caution' || visual.risk_level === 'Medium') return 'Warn';
+      if (visual.risk_level === 'High Risk' || visual.risk_level === 'High') return 'Fail';
+      if (flagsLower.some(f => f.includes('packaging') || f.includes('print') || f.includes('visual'))) return 'Warn';
+      return 'Pass';
+    }
+    return 'Pass';
+  }
+
+  function statusCls(s) {
+    if (s === 'Pass') return 'pass';
+    if (s === 'Warn') return 'warn';
+    return 'fail';
+  }
+
   function renderResult(data) {
     const cls = riskClass(data.risk_level);
     const drugName = data.drug_name || 'Unrecognized medicine';
     const manufacturer = data.manufacturer || 'Manufacturer not legible';
     const flags = data.flags || [];
     const verdict = data.verdict || { headline: '', detail: '', icon: cls };
-    const verdictCls = riskClass(data.risk_level); // verdict.icon values map 1:1 to safe/caution/high-risk already, but keep consistent with badge color
+    const verdictCls = riskClass(data.risk_level);
+
+    const expiryStatus = getCheckStatus(data, 'expiry');
+    const mfrStatus = getCheckStatus(data, 'manufacturer');
+    const batchStatus = getCheckStatus(data, 'batch');
+    const packagingStatus = getCheckStatus(data, 'packaging');
+
+    const aboutHtml = data.about
+      ? `<div class="card about-card">
+           <div class="card-header">About this medicine</div>
+           <div class="card-body">
+             <p class="about-text">${escapeHtml(data.about.general_use)}</p>
+             <p class="about-disclaimer">${escapeHtml(data.about.disclaimer)}</p>
+           </div>
+         </div>`
+      : '';
 
     const flagsHtml = flags.length
       ? '<ul class="flags-list">' + flags.map(f => `<li>${escapeHtml(f)}</li>`).join('') + '</ul>'
-      : '<p class="no-flags">No issues flagged.</p>';
+      : '<p class="no-flags" style="font-size:13px;color:var(--ink-soft);font-style:italic;">No issues flagged.</p>';
 
-    const aboutHtml = data.about
-      ? `
-        <div class="about-section">
-          <h3>About this medicine</h3>
-          <div class="about-box">
-            <p class="about-text">${escapeHtml(data.about.general_use)}</p>
-            <p class="about-disclaimer">${escapeHtml(data.about.disclaimer)}</p>
-          </div>
-        </div>
-      `
-      : '';
-
-    resultContainer.innerHTML = `
-      <div class="result ${cls}">
+    resultArea.innerHTML = `
+      <div class="card result-card ${cls}">
         <div class="result-head">
           <div class="title-row">
             <div>
@@ -631,32 +847,33 @@
             <div class="risk-badge ${cls}">${escapeHtml(data.risk_level)}</div>
           </div>
           <div class="verdict-block ${verdictCls}">
-            <div class="verdict-icon ${verdictCls}">${VERDICT_ICONS[verdict.icon] || VERDICT_ICONS[cls]}</div>
+            <div class="verdict-icon ${verdictCls}">${VERDICT_ICONS[verdict.icon] || VERDICT_ICONS[cls] || VERDICT_ICONS.safe}</div>
             <div>
               <p class="verdict-headline ${verdictCls}">${escapeHtml(verdict.headline)}</p>
               <p class="verdict-detail">${escapeHtml(verdict.detail)}</p>
             </div>
           </div>
         </div>
-        <div class="score-row">
-          <span class="score-label">Risk score</span>
-          <div class="score-track"><div class="score-fill ${cls}" style="width:${data.risk_score}%"></div></div>
-          <span class="score-value">${data.risk_score}</span>
+        <div class="checks-grid">
+          <div class="check-item">${CHECK_ICONS.expiry}<div class="check-label">Expiry</div><div class="check-status ${statusCls(expiryStatus)}">${expiryStatus}</div></div>
+          <div class="check-item">${CHECK_ICONS.manufacturer}<div class="check-label">Manufacturer</div><div class="check-status ${statusCls(mfrStatus)}">${mfrStatus}</div></div>
+          <div class="check-item">${CHECK_ICONS.batch}<div class="check-label">Batch format</div><div class="check-status ${statusCls(batchStatus)}">${batchStatus}</div></div>
+          <div class="check-item">${CHECK_ICONS.packaging}<div class="check-label">Packaging</div><div class="check-status ${statusCls(packagingStatus)}">${packagingStatus}</div></div>
         </div>
-        <div class="flags-section">
-          <h3>What we found</h3>
+        <div style="padding:16px 20px 18px;">
+          <h3 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--ink-soft);">What we found</h3>
           ${flagsHtml}
         </div>
-        ${aboutHtml}
-        <button class="raw-toggle" id="rawToggle">Show technical details ▾</button>
+        <button class="raw-toggle" id="rawToggle">&lt;/&gt; Show technical details</button>
         <div class="raw-json" id="rawJson">${escapeHtml(JSON.stringify(data.details, null, 2))}</div>
       </div>
+      ${aboutHtml}
     `;
 
     document.getElementById('rawToggle').addEventListener('click', function () {
       const el = document.getElementById('rawJson');
       el.classList.toggle('open');
-      this.textContent = el.classList.contains('open') ? 'Hide technical details ▴' : 'Show technical details ▾';
+      this.textContent = el.classList.contains('open') ? '</> Hide technical details' : '</> Show technical details';
     });
   }
 </script>
