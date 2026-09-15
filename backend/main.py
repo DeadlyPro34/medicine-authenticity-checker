@@ -8,7 +8,7 @@ Single endpoint that runs all four agents in sequence:
   4. report_agent         -> final combined verdict
 
 Run with:  uvicorn main:app --reload
-Requires:  ANTHROPIC_API_KEY set in your environment
+Requires:  GROQ_API_KEY set in your environment
 """
 
 import os

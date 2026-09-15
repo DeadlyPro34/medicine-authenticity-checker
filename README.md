@@ -117,9 +117,6 @@ JSON Response
   v
 Frontend Client (Renders Verdict)
 ```
-
-![Architecture Diagram](assets/Architecture_diagram.png)
-
 ---
 
 ## Project Structure
@@ -255,13 +252,6 @@ The application relies on a local CSV database (`manufacturers.csv`) for complia
 ---
 
 ## Deployment
-
-To deploy using Docker (Assuming a Dockerfile is present):
-
-```bash
-docker build -t medicine-checker .
-docker run -p 8000:8000 -e GROQ_API_KEY="your_key" medicine-checker
-```
 
 For production deployment, ensure the application is behind a reverse proxy (like Nginx) configured with SSL/TLS, and the frontend is hosted on a CDN or static file hosting service.
 
