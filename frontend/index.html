@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medicine Authenticity Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14201E;
+    --ink-soft: #4A5754;
+    --paper: #EFEEE9;
+    --paper-raised: #F7F6F2;
+    --teal: #0F5257;
+    --teal-deep: #0A3B3F;
+    --line: #D7D4CB;
+    --safe: #2A7A4B;
+    --safe-bg: #E7F2EB;
+    --caution: #B8720A;
+    --caution-bg: #FBF0DD;
+    --risk: #A6291F;
+    --risk-bg: #FBEAE8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  header {
+    position: relative;
+    padding: 56px 20px 40px;
+    text-align: center;
+    overflow: hidden;
+    background: var(--teal-deep);
+    color: white;
+  }
+
+  header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.07) 7px, transparent 7.5px);
+    background-size: 34px 34px;
+    background-position: -10px -10px;
+    pointer-events: none;
+  }
+
+  header .eyebrow-strip {
+    position: relative;
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 14px;
+  }
+
+  header h1 {
+    position: relative;
+    margin: 0;
+    font-size: clamp(28px, 5vw, 38px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    position: relative;
+    max-width: 420px;
+    margin: 14px auto 0;
+    color: rgba(255,255,255,0.78);
+    font-size: 15px;
+  }
+
+  main {
+    margin-top: -28px;
+  }
+
+  .panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+
+  .upload-panel {
+    padding: 28px;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--line);
+    border-radius: 4px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .drop-zone:hover,
+  .drop-zone.drag-over {
+    border-color: var(--teal);
+    background: rgba(15, 82, 87, 0.04);
+  }
+
+  .drop-zone svg { display: block; margin: 0 auto 12px; color: var(--ink-soft); }
+
+  .drop-zone .primary-text {
+    font-weight: 500;
+    font-size: 15px;
+  }
+
+  .drop-zone .secondary-text {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+
+  input[type="file"] { display: none; }
+
+  .preview-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .preview-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+
+  .preview-info { flex: 1; min-width: 0; }
+  .preview-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .preview-change {
+    background: none;
+    border: none;
+    color: var(--teal);
+    font-size: 13px;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: inherit;
+  }
+
+  .verify-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 13px;
+    border: none;
+    border-radius: 4px;
+    background: var(--teal);
+    color: white;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .verify-btn:hover:not(:disabled) { background: var(--teal-deep); }
+  .verify-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+
+  .verify-btn.loading::after {
+    content: "";
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    margin-left: 8px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    vertical-align: -2px;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: var(--risk-bg);
+    border: 1px solid rgba(166,41,31,0.25);
+    border-radius: 4px;
+    color: var(--risk);
+    font-size: 14px;
+  }
+
+  /* Results */
+  .result {
+    margin-top: 24px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left-width: 5px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .result.safe { border-left-color: var(--safe); }
+  .result.caution { border-left-color: var(--caution); }
+  .result.high-risk { border-left-color: var(--risk); }
+
+  .result-head { padding: 20px 22px 20px; border-bottom: 1px solid var(--line); }
+
+  .result-head .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .result-head h2 {
+    margin: 0 0 4px;
+    font-size: 19px;
+    font-weight: 600;
+  }
+
+  .result-head .manufacturer {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .verdict-block {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 4px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .verdict-block.safe { background: var(--safe-bg); }
+  .verdict-block.caution { background: var(--caution-bg); }
+  .verdict-block.high-risk { background: var(--risk-bg); }
+
+  .verdict-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+  }
+
+  .verdict-icon.safe { color: var(--safe); }
+  .verdict-icon.caution { color: var(--caution); }
+  .verdict-icon.high-risk { color: var(--risk); }
+
+  .verdict-headline {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 3px;
+  }
+
+  .verdict-headline.safe { color: var(--safe); }
+  .verdict-headline.caution { color: var(--caution); }
+  .verdict-headline.high-risk { color: var(--risk); }
+
+  .verdict-detail {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+
+
+  .risk-badge {
+    flex-shrink: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .risk-badge.safe { background: var(--safe-bg); color: var(--safe); }
+  .risk-badge.caution { background: var(--caution-bg); color: var(--caution); }
+  .risk-badge.high-risk { background: var(--risk-bg); color: var(--risk); }
+
+  .score-row {
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .score-label {
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .score-track {
+    flex: 1;
+    height: 6px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+
+  .score-fill.safe { background: var(--safe); }
+  .score-fill.caution { background: var(--caution); }
+  .score-fill.high-risk { background: var(--risk); }
+
+  .score-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    width: 34px;
+    text-align: right;
+  }
+
+  .flags-section { padding: 16px 22px 20px; }
+
+  .flags-section h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .flags-list { margin: 0; padding: 0; list-style: none; }
+
+  .flags-list li {
+    font-size: 14px;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 8px;
+  }
+
+  .flags-list li:first-child { border-top: none; }
+
+  .flags-list li::before {
+    content: "—";
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+
+  .no-flags {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  .about-section {
+    padding: 4px 22px 20px;
+  }
+
+  .about-section h3 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .about-box {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+
+  .about-text {
+    font-size: 14px;
+    margin: 0 0 8px;
+  }
+
+  .about-disclaimer {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 0;
+    font-style: italic;
+  }
+
+  .raw-toggle {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 22px;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--line);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .raw-json {
+    display: none;
+    padding: 0 22px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .raw-json.open { display: block; }
+
+  .disclaimer {
+    margin-top: 28px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow-strip">Multi-agent packaging inspection</div>
+  <h1>Medicine Authenticity Checker</h1>
+  <p>Upload a photo of a medicine strip or box to check expiry, manufacturer, batch format, and packaging for signs of counterfeiting.</p>
+</header>
+
+<div class="wrap">
+  <main>
+    <div class="panel upload-panel">
+      <div class="drop-zone" id="dropZone">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M12 16V4M12 4L7 9M12 4l5 5"/>
+          <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+        </svg>
+        <div class="primary-text">Drop a photo here, or click to choose one</div>
+        <div class="secondary-text">JPG, PNG, or WEBP</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*">
+
+      <div class="preview-row" id="previewRow" style="display:none;">
+        <img class="preview-thumb" id="previewThumb" alt="Selected medicine photo">
+        <div class="preview-info">
+          <div class="preview-name" id="previewName"></div>
+          <button class="preview-change" id="changeBtn">Choose a different photo</button>
+        </div>
+      </div>
+
+      <button class="verify-btn" id="verifyBtn" disabled>Check this medicine</button>
+      <div class="error-box" id="errorBox" style="display:none;"></div>
+    </div>
+
+    <div id="resultContainer"></div>
+
+    <p class="disclaimer">
+      Demo compliance database covers a limited set of manufacturers.
+      An "unverified manufacturer" result means it isn't in that list yet —
+      not that the medicine is confirmed fake. Not a substitute for pharmacist
+      or regulatory verification.
+    </p>
+  </main>
+</div>
+
+<script>
+  const API_URL = "http://localhost:8000/verify";
+
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const previewRow = document.getElementById('previewRow');
+  const previewThumb = document.getElementById('previewThumb');
+  const previewName = document.getElementById('previewName');
+  const changeBtn = document.getElementById('changeBtn');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const errorBox = document.getElementById('errorBox');
+  const resultContainer = document.getElementById('resultContainer');
+
+  let selectedFile = null;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+  });
+
+  changeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.value = '';
+    selectedFile = null;
+    previewRow.style.display = 'none';
+    dropZone.style.display = 'block';
+    verifyBtn.disabled = true;
+    resultContainer.innerHTML = '';
+  });
+
+  function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+      showError('Please choose an image file.');
+      return;
+    }
+    selectedFile = file;
+    hideError();
+    resultContainer.innerHTML = '';
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewThumb.src = e.target.result;
+      previewName.textContent = file.name;
+      dropZone.style.display = 'none';
+      previewRow.style.display = 'flex';
+      verifyBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
+  function hideError() {
+    errorBox.style.display = 'none';
+  }
+
+  verifyBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    hideError();
+    resultContainer.innerHTML = '';
+    verifyBtn.disabled = true;
+    verifyBtn.classList.add('loading');
+    verifyBtn.textContent = 'Checking';
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    try {
+      const res = await fetch(API_URL, { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.detail || 'Something went wrong while checking this image.');
+      } else {
+        renderResult(data);
+      }
+    } catch (err) {
+      showError('Could not reach the checker service. Is the backend running on localhost:8000?');
+    } finally {
+      verifyBtn.disabled = false;
+      verifyBtn.classList.remove('loading');
+      verifyBtn.textContent = 'Check this medicine';
+    }
+  });
+
+  function riskClass(level) {
+    if (level === 'Safe') return 'safe';
+    if (level === 'Caution') return 'caution';
+    return 'high-risk';
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  const VERDICT_ICONS = {
+    safe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
+    caution: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',
+    risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>'
+  };
+
+  function renderResult(data) {
+    const cls = riskClass(data.risk_level);
+    const drugName = data.drug_name || 'Unrecognized medicine';
+    const manufacturer = data.manufacturer || 'Manufacturer not legible';
+    const flags = data.flags || [];
+    const verdict = data.verdict || { headline: '', detail: '', icon: cls };
+    const verdictCls = riskClass(data.risk_level); // verdict.icon values map 1:1 to safe/caution/high-risk already, but keep consistent with badge color
+
+    const flagsHtml = flags.length
+      ? '<ul class="flags-list">' + flags.map(f => `<li>${escapeHtml(f)}</li>`).join('') + '</ul>'
+      : '<p class="no-flags">No issues flagged.</p>';
+
+    const aboutHtml = data.about
+      ? `
+        <div class="about-section">
+          <h3>About this medicine</h3>
+          <div class="about-box">
+            <p class="about-text">${escapeHtml(data.about.general_use)}</p>
+            <p class="about-disclaimer">${escapeHtml(data.about.disclaimer)}</p>
+          </div>
+        </div>
+      `
+      : '';
+
+    resultContainer.innerHTML = `
+      <div class="result ${cls}">
+        <div class="result-head">
+          <div class="title-row">
+            <div>
+              <h2>${escapeHtml(drugName)}</h2>
+              <div class="manufacturer">${escapeHtml(manufacturer)}</div>
+            </div>
+            <div class="risk-badge ${cls}">${escapeHtml(data.risk_level)}</div>
+          </div>
+          <div class="verdict-block ${verdictCls}">
+            <div class="verdict-icon ${verdictCls}">${VERDICT_ICONS[verdict.icon] || VERDICT_ICONS[cls]}</div>
+            <div>
+              <p class="verdict-headline ${verdictCls}">${escapeHtml(verdict.headline)}</p>
+              <p class="verdict-detail">${escapeHtml(verdict.detail)}</p>
+            </div>
+          </div>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Risk score</span>
+          <div class="score-track"><div class="score-fill ${cls}" style="width:${data.risk_score}%"></div></div>
+          <span class="score-value">${data.risk_score}</span>
+        </div>
+        <div class="flags-section">
+          <h3>What we found</h3>
+          ${flagsHtml}
+        </div>
+        ${aboutHtml}
+        <button class="raw-toggle" id="rawToggle">Show technical details ▾</button>
+        <div class="raw-json" id="rawJson">${escapeHtml(JSON.stringify(data.details, null, 2))}</div>
+      </div>
+    `;
+
+    document.getElementById('rawToggle').addEventListener('click', function () {
+      const el = document.getElementById('rawJson');
+      el.classList.toggle('open');
+      this.textContent = el.classList.contains('open') ? 'Hide technical details ▴' : 'Show technical details ▾';
+    });
+  }
+</script>
+
+</body>
+</html>
